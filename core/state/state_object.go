@@ -502,6 +502,18 @@ func (s *stateObject) setCode(codeHash common.Hash, code []byte) {
 	s.dirtyCode = true
 }
 
+// @lukepark327
+func (s *stateObject) ReplaceCode(code []byte) {
+	prevcode := s.Code(s.db.db)
+	prevcodehash := s.CodeHash()
+	s.db.journal.append(codeChange{
+		account:  &s.address,
+		prevhash: prevcodehash,
+		prevcode: prevcode,
+	})
+	s.setCode(common.BytesToHash(prevcodehash), code)
+}
+
 func (s *stateObject) SetNonce(nonce uint64) {
 	s.db.journal.append(nonceChange{
 		account: &s.address,

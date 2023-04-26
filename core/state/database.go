@@ -131,6 +131,17 @@ type cachingDB struct {
 	codeCache     *fastcache.Cache
 }
 
+// @lukepark327
+func (db *cachingDB) SetCache(codeHash common.Hash) error {
+	code := rawdb.ReadCode(db.db.DiskDB(), codeHash)
+	if len(code) > 0 {
+		db.codeCache.Set(codeHash.Bytes(), code)
+		db.codeSizeCache.Add(codeHash, len(code))
+		return nil
+	}
+	return errors.New("not found")
+}
+
 // OpenTrie opens the main account trie at a specific root hash.
 func (db *cachingDB) OpenTrie(root common.Hash) (Trie, error) {
 	tr, err := trie.NewSecure(root, db.db)
@@ -162,6 +173,7 @@ func (db *cachingDB) CopyTrie(t Trie) Trie {
 // ContractCode retrieves a particular contract's code.
 func (db *cachingDB) ContractCode(addrHash, codeHash common.Hash) ([]byte, error) {
 	if code := db.codeCache.Get(nil, codeHash.Bytes()); len(code) > 0 {
+		println("h")
 		return code, nil
 	}
 	code := rawdb.ReadCode(db.db.DiskDB(), codeHash)

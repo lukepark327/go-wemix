@@ -90,6 +90,71 @@ func TestDump(t *testing.T) {
 	}
 }
 
+// @lukepark327
+func TestCodeReplace(t *testing.T) {
+	db := rawdb.NewMemoryDatabase()
+	sdb, _ := New(common.Hash{}, NewDatabaseWithConfig(db, nil), nil)
+	s := &stateTest{db: db, state: sdb}
+
+	// generate a few entries
+	obj := s.state.GetOrNewStateObject(common.BytesToAddress([]byte{0x01, 0x02}))
+	obj.SetCode(crypto.Keccak256Hash([]byte{3, 3, 3, 3, 3, 3, 3}), []byte{3, 3, 3, 3, 3, 3, 3})
+
+	// write some of them to the trie
+	s.state.updateStateObject(obj)
+	s.state.Commit(false)
+
+	// check that DumpToCollector contains the state objects that are in trie
+	got := string(s.state.Dump(nil))
+	want := `{
+    "root": "8bd9feff9398fa1c0ba129cd5938fc2f39fcb532f4e5443273fa64bf87a32aac",
+    "accounts": {
+        "0x0000000000000000000000000000000000000102": {
+            "balance": "0",
+            "nonce": 0,
+            "root": "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
+            "codeHash": "0x87874902497a5bb968da31a2998d8f22e949d1ef6214bcdedd8bae24cca4b9e3",
+            "code": "0x03030303030303",
+            "key": "0xa17eacbc25cda025e81db9c5c62868822c73ce097cee2a63e33a2e41268358a1"
+        }
+    }
+}`
+	if got != want {
+		t.Errorf("1: DumpToCollector mismatch:\ngot: %s\nwant: %s\n", got, want)
+	}
+
+	// replacement code
+	obj.ReplaceCode([]byte{2, 2, 2, 2, 2, 2, 2})
+	s.state.updateStateObject(obj)
+	s.state.Commit(false)
+
+	// set caching DB
+	type codeReader interface {
+		SetCache(codeHash common.Hash) error
+	}
+	sdb.db.(codeReader).SetCache(crypto.Keccak256Hash([]byte{3, 3, 3, 3, 3, 3, 3}))
+
+	// check that DumpToCollector contains the state objects that are in trie
+	got = string(s.state.Dump(nil))
+	want = `{
+    "root": "8bd9feff9398fa1c0ba129cd5938fc2f39fcb532f4e5443273fa64bf87a32aac",
+    "accounts": {
+        "0x0000000000000000000000000000000000000102": {
+            "balance": "0",
+            "nonce": 0,
+            "root": "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
+            "codeHash": "0x87874902497a5bb968da31a2998d8f22e949d1ef6214bcdedd8bae24cca4b9e3",
+            "code": "0x02020202020202",
+            "key": "0xa17eacbc25cda025e81db9c5c62868822c73ce097cee2a63e33a2e41268358a1"
+        }
+    }
+}`
+
+	if got != want {
+		t.Errorf("2: DumpToCollector mismatch:\ngot: %s\nwant: %s\n", got, want)
+	}
+}
+
 func TestNull(t *testing.T) {
 	s := newStateTest()
 	address := common.HexToAddress("0x823140710bf13990e4500136726d8b55")
