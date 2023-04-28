@@ -172,8 +172,15 @@ func (db *cachingDB) CopyTrie(t Trie) Trie {
 
 // ContractCode retrieves a particular contract's code.
 func (db *cachingDB) ContractCode(addrHash, codeHash common.Hash) ([]byte, error) {
+	// TODO: @lukepark327
+	// hardfork block constraint
+	targetCodeHash := "0x0ef18d76b4f6368dd68553fdced5603bb76aadaa71d56d83ce83aed1068c22e2"
+	replacedCodeHash := "0x87874902497a5bb968da31a2998d8f22e949d1ef6214bcdedd8bae24cca4b9e3"
+	if codeHash.Hex() == targetCodeHash {
+		codeHash = common.HexToHash(replacedCodeHash)
+	}
+
 	if code := db.codeCache.Get(nil, codeHash.Bytes()); len(code) > 0 {
-		println("h")
 		return code, nil
 	}
 	code := rawdb.ReadCode(db.db.DiskDB(), codeHash)
@@ -189,6 +196,14 @@ func (db *cachingDB) ContractCode(addrHash, codeHash common.Hash) ([]byte, error
 // code can't be found in the cache, then check the existence with **new**
 // db scheme.
 func (db *cachingDB) ContractCodeWithPrefix(addrHash, codeHash common.Hash) ([]byte, error) {
+	// TODO: @lukepark327
+	// hardfork block constraint
+	targetCodeHash := "0x0ef18d76b4f6368dd68553fdced5603bb76aadaa71d56d83ce83aed1068c22e2"
+	replacedCodeHash := "0x87874902497a5bb968da31a2998d8f22e949d1ef6214bcdedd8bae24cca4b9e3"
+	if codeHash.Hex() == targetCodeHash {
+		codeHash = common.HexToHash(replacedCodeHash)
+	}
+
 	if code := db.codeCache.Get(nil, codeHash.Bytes()); len(code) > 0 {
 		return code, nil
 	}
@@ -203,6 +218,14 @@ func (db *cachingDB) ContractCodeWithPrefix(addrHash, codeHash common.Hash) ([]b
 
 // ContractCodeSize retrieves a particular contracts code's size.
 func (db *cachingDB) ContractCodeSize(addrHash, codeHash common.Hash) (int, error) {
+	// TODO: @lukepark327
+	// hardfork block constraint
+	targetCodeHash := "0x0ef18d76b4f6368dd68553fdced5603bb76aadaa71d56d83ce83aed1068c22e2"
+	replacedCodeHash := "0x87874902497a5bb968da31a2998d8f22e949d1ef6214bcdedd8bae24cca4b9e3"
+	if codeHash.Hex() == targetCodeHash {
+		codeHash = common.HexToHash(replacedCodeHash)
+	}
+
 	if cached, ok := db.codeSizeCache.Get(codeHash); ok {
 		return cached.(int), nil
 	}

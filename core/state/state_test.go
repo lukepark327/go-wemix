@@ -131,6 +131,7 @@ func TestCodeReplace(t *testing.T) {
 	// set caching DB
 	type codeReader interface {
 		SetCache(codeHash common.Hash) error
+		ContractCode(addrHash, codeHash common.Hash) ([]byte, error)
 	}
 	sdb.db.(codeReader).SetCache(crypto.Keccak256Hash([]byte{3, 3, 3, 3, 3, 3, 3}))
 
@@ -152,6 +153,15 @@ func TestCodeReplace(t *testing.T) {
 
 	if got != want {
 		t.Errorf("2: DumpToCollector mismatch:\ngot: %s\nwant: %s\n", got, want)
+	}
+
+	// get code
+	code, _ := sdb.db.(codeReader).ContractCode(common.BytesToHash([]byte{0x01, 0x02}), crypto.Keccak256Hash([]byte{2, 2, 2, 2, 2, 2, 2}))
+	got = common.Bytes2Hex(code)
+	want = `02020202020202`
+
+	if got != want {
+		t.Errorf("3: Get ContractCode mismatch:\ngot: %s\nwant: %s\n", got, want)
 	}
 }
 
